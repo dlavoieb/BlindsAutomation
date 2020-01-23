@@ -25,10 +25,12 @@ void loop()
 
 void closeEventHandler(const char *event, const char *data)
 {
+  Particle.publish("blind-closing", "", 60, PRIVATE);
   gBlindController.setBlindPosition(100);
 }
 
 void openEventHandler(const char *event, const char *data)
 {
+  Particle.publish("blind-opening", "", 60, PRIVATE);
   gBlindController.setBlindPosition(0);
 }

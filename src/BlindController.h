@@ -27,5 +27,5 @@ private:
   PID mPidController;
 
   void tuneControllerPrivate(double iKp, double iKi, double iKd);
-  void setMotorSpeed(double iMotorSpeed);
+  void setMotorSpeed();
 };
