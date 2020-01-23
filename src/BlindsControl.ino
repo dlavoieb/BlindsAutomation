@@ -6,9 +6,10 @@
  */
 
 #include "BlindController.h"
-#include "pid.h"
 
 BlindController gBlindController(2, 5, 1);
+
+int MotorEnablePin = D4;
 
 void setup() 
 {
@@ -16,6 +17,9 @@ void setup()
   Particle.subscribe("OpenBlinds", openEventHandler, ALL_DEVICES);
 
   gBlindController.setup();
+
+  pinMode(MotorEnablePin, OUTPUT);
+  digitalWrite(MotorEnablePin, HIGH);
 }
 
 void loop() 

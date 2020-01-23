@@ -1,10 +1,11 @@
 #include "application.h"
 #include "BlindController.h"
-
+#include "cstdio"
 
 BlindController::BlindController(double Kp, double Ki, double Kd) :
   mKp(Kp), mKi(Ki), mKd(Kd),
-  mPidController(&mCurrentPosition, &mMotorSpeed, &mDesiredPosition, mKp, mKi, mKd, PID::DIRECT)
+  mPidController(&mCurrentPosition, &mMotorSpeed, &mDesiredPosition, mKp, mKi, mKd, PID::DIRECT),
+  mMotor(D0, D1, D7)
 {
   mDesiredPosition = 0;
   mCurrentPosition = 0;
@@ -20,8 +21,6 @@ void BlindController::setup()
   Particle.variable("motor_command", mMotorSpeed);
 
   Particle.function("tune_controller", &BlindController::tuneController, this);
-
-  pinMode(mMotorOutputPin, OUTPUT);
 }
 
 void BlindController::loop()
@@ -46,25 +45,26 @@ double BlindController::getCurrentBlindPosition()
 
 int BlindController::tuneController(String data)
 { 
-  Particle.publish("tuning-updated", data, 60, PRIVATE);
-  Particle.publish("tuning-updated", String::format("length: %d", data.length()), 60, PRIVATE);
+  Particle.publish("tuning-command-received", String::format("length: %d, data: %s", data.length(), data), 60, PRIVATE);
   
-  double wInputParameters[3] = {0, 0, 0};
-  int wBeginIndex = 0;
-  int wCurrentParameter = 0;
+  float wInputParameters[3] = {0, 0, 0};
+  // int wBeginIndex = 0;
+  // int wCurrentParameter = 0;
 
-  for (int i = 0; i < data.length(); i++)
-  {
-    if ((data.charAt(i) == ',' || i == data.length() - 1))
-    { 
-      Particle.publish("character-of-interest", String::format("beginIndex: %d, i: %d, substring: %s", wBeginIndex, i, data.substring(wBeginIndex, i - 1)), 60, PRIVATE);
-      if (wCurrentParameter < 3)
-      {
-        wInputParameters[wCurrentParameter++] = data.substring(wBeginIndex, i - 1).toFloat();
-      }
-      wBeginIndex = i + 1;
-    }
-  }
+  sscanf(data.c_str(), "%a,%a,%a", &wInputParameters[0], &wInputParameters[1], &wInputParameters[2]);
+
+  // for (int i = 0; i < data.length(); i++)
+  // {
+  //   if ((data.charAt(i) == ',' || i == data.length() - 1))
+  //   { 
+  //     Particle.publish("character-of-interest", String::format("beginIndex: %d, i: %d, substring: %s", wBeginIndex, i, data.substring(wBeginIndex, i - 1)), 60, PRIVATE);
+  //     if (wCurrentParameter < 3)
+  //     {
+  //       wInputParameters[wCurrentParameter++] = data.substring(wBeginIndex, i - 1).toFloat();
+  //     }
+  //     wBeginIndex = i + 1;
+  //   }
+  // }
 
   tuneControllerPrivate(wInputParameters[0], wInputParameters[1], wInputParameters[2]);
   return wInputParameters[2];
@@ -78,12 +78,11 @@ void BlindController::tuneControllerPrivate(double iKp, double iKi, double iKd)
   mPidController.SetTunings(mKp, mKi, mKd);
 
   Particle.publish("new-tuning", String::format("{Kp: %d, Ki: %d, Kd: %d}", mKp, mKi, mKd), 60, PRIVATE);
-
 }
 
 void BlindController::setMotorSpeed()
 {
-  analogWrite(mMotorOutputPin, mMotorSpeed);
+  mMotor.setSpeed(mMotorSpeed);
   mCurrentPosition += (mMotorSpeed-255/2) / 1000.0;
 }
 

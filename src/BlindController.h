@@ -1,4 +1,5 @@
-#include <pid.h>
+#include "pid.h"
+#include "MotorController.h"
 
 class BlindController
 {
@@ -22,9 +23,8 @@ private:
   double mKi;
   double mKd;
 
-  int mMotorOutputPin = D7;
-
   PID mPidController;
+  MotorController mMotor;
 
   void tuneControllerPrivate(double iKp, double iKi, double iKd);
   void setMotorSpeed();
